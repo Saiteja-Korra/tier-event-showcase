@@ -138,8 +138,8 @@
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
-import EventCard from '@/components/EventCard' // Assuming this component exists
-import { upgradeUserTier } from '@/app/events/actions' // CORRECTED: Import from the root actions file
+import EventCard from '@/components/EventCard'
+import { upgradeUserTier } from '@/app/events/actions'
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -147,19 +147,27 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Define a type for event data
+interface Event {
+  id: number
+  title: string
+  description: string
+  event_date: string
+  tier: string
+  image_url: string
+}
+
 export default function EventsPage() {
   const { user, isLoaded } = useUser()
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isUpgrading, setIsUpgrading] = useState(false)
 
-  // This effect fetches events when the user is loaded.
-  // The RLS policy handles filtering automatically on the server.
+  // Fetch events once the user is loaded
   useEffect(() => {
     if (!isLoaded) return
 
-    // If the user is not logged in, don't fetch events.
     if (!user) {
       setLoading(false)
       return
@@ -178,24 +186,33 @@ export default function EventsPage() {
     }
 
     fetchEvents()
-  }, [isLoaded, user]) // Re-run when user object changes
+  }, [isLoaded, user])
 
-  // This function now calls the secure server action
+  // Simulate tier upgrade to platinum
   const handleTierUpgrade = async () => {
     setIsUpgrading(true)
     const result = await upgradeUserTier()
     if (!result.success) {
       setError(result.error || 'Failed to upgrade tier.')
     } else {
-      // Force a refresh on the user object from Clerk to update the UI instantly.
       await user?.reload()
     }
     setIsUpgrading(false)
   }
 
-  if (!isLoaded || loading) return <div className="p-6 text-center">Loading...</div>
-  if (!user) return <div className="p-6 text-center">Please log in to view events.</div>
-  if (error) return <div className="p-6 text-red-600 text-center">Error: {error}</div>
+  if (!isLoaded || loading) {
+    return <div className="p-6 text-center">Loading...</div>
+  }
+
+  if (!user) {
+    return <div className="p-6 text-center">Please log in to view events.</div>
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-600 text-center">Error: {error}</div>
+  }
+
+  const currentTier = (user.publicMetadata.tier as string) || 'free'
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -203,12 +220,15 @@ export default function EventsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Available Events</h1>
           <p className="text-md text-gray-500 mt-1">
-            Your current tier: <span className="font-semibold capitalize text-indigo-600">{(user.publicMetadata.tier as string) || 'free'}</span>
+            Your current tier:{' '}
+            <span className="font-semibold capitalize text-indigo-600">
+              {currentTier}
+            </span>
           </p>
         </div>
         <button
           onClick={handleTierUpgrade}
-          disabled={isUpgrading || user.publicMetadata.tier === 'platinum'}
+          disabled={isUpgrading || currentTier === 'platinum'}
           className="mt-4 sm:mt-0 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isUpgrading ? 'Upgrading...' : 'Simulate Upgrade to Platinum'}
