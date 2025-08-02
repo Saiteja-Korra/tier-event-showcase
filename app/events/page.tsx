@@ -1,132 +1,132 @@
-// // app/events/page.tsx
-import { currentUser } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient"; // We'll create this next
-import EventCard from "@/components/EventCard";   // We'll create this too
+// // // app/events/page.tsx
+// import { currentUser } from "@clerk/nextjs/server";
+// import { supabase } from "@/lib/supabaseClient"; // We'll create this next
+// import EventCard from "@/components/EventCard";   // We'll create this too
 
-const tierOrder = ["free", "silver", "gold", "platinum"];
+// const tierOrder = ["free", "silver", "gold", "platinum"];
 
-export default async function EventsPage() {
-  const user = await currentUser();
+// export default async function EventsPage() {
+//   const user = await currentUser();
 
-  if (!user) return <div className="p-6">Please log in to view events.</div>;
+//   if (!user) return <div className="p-6">Please log in to view events.</div>;
 
-  const userTier = (user.publicMetadata.tier as string) || "free";
-  const allowedTiers = tierOrder.slice(0, tierOrder.indexOf(userTier) + 1);
+//   const userTier = (user.publicMetadata.tier as string) || "free";
+//   const allowedTiers = tierOrder.slice(0, tierOrder.indexOf(userTier) + 1);
 
-  const { data: events, error } = await supabase
-    .from("events")
-    .select("*")
-    .in("tier", allowedTiers);
+//   const { data: events, error } = await supabase
+//     .from("events")
+//     .select("*")
+//     .in("tier", allowedTiers);
 
-  if (error) {
-  console.error("Supabase error:", error.message);
-  return <div>Error loading events: {error.message}</div>;
+//   if (error) {
+//   console.error("Supabase error:", error.message);
+//   return <div>Error loading events: {error.message}</div>;
+//     }
+
+
+//   return (
+//       <div className="max-w-7xl mx-auto p-6">
+//           <h1 className="text-2xl font-bold text-gray-800 mb-4">Available Events</h1>
+
+//           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+//               {events.map(event => (
+//                   <EventCard key={event.id} {...event} />
+//               ))}
+//           </div>
+//       </div>
+
+//   );
+// }
+
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { createClient } from '@supabase/supabase-js'
+import EventCard from '@/components/EventCard'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+const tierOrder = ['free', 'silver', 'gold', 'platinum']
+
+export default function EventsPage() {
+  const { user, isLoaded } = useUser()
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const userTier = (user?.publicMetadata?.tier as string) || 'free'
+  const allowedTiers = tierOrder.slice(0, tierOrder.indexOf(userTier) + 1)
+
+  useEffect(() => {
+    if (!isLoaded || !user) return
+
+    const fetchEvents = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setEvents(data)
+      }
+
+      setLoading(false)
     }
 
+    fetchEvents()
+  }, [isLoaded, user])
+
+  const handleTierUpgrade = async () => {
+    try {
+      await user?.update({
+        publicMetadata: { tier: 'platinum' },
+      })
+      window.location.reload()
+    } catch (err) {
+      alert('Failed to upgrade tier.')
+    }
+  }
+
+  if (!isLoaded) return <div className="p-6">Loading user...</div>
+  if (!user) return <div className="p-6">Please log in to view events.</div>
+  if (loading) return <div className="p-6">Loading events...</div>
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>
 
   return (
-      <div className="max-w-7xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Available Events</h1>
+    <div className="max-w-7xl mx-auto p-6">
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Available Events</h1>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {events.map(event => (
-                  <EventCard key={event.id} {...event} />
-              ))}
-          </div>
+      <button
+        onClick={handleTierUpgrade}
+        className="mb-6 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+      >
+        Simulate Tier Upgrade to Platinum
+      </button>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {events.map((event) => {
+          const isAllowed = allowedTiers.includes(event.tier)
+          return (
+            <div key={event.id} className="relative">
+              <EventCard {...event} />
+              {!isAllowed && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl text-red-600 text-center font-semibold text-sm p-4">
+                  Upgrade to <span className="ml-1 font-bold">Platinum</span> to access this event.
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
-
-  );
+    </div>
+  )
 }
-
-// // 'use client'
-
-// // import { useEffect, useState } from 'react'
-// // import { useUser } from '@clerk/nextjs'
-// // import { createClient } from '@supabase/supabase-js'
-// // import EventCard from '@/components/EventCard'
-
-// // const supabase = createClient(
-// //   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-// //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-// // )
-
-// // const tierOrder = ['free', 'silver', 'gold', 'platinum']
-
-// // export default function EventsPage() {
-// //   const { user, isLoaded } = useUser()
-// //   const [events, setEvents] = useState<any[]>([])
-// //   const [loading, setLoading] = useState(true)
-// //   const [error, setError] = useState<string | null>(null)
-
-// //   const userTier = (user?.publicMetadata?.tier as string) || 'free'
-// //   const allowedTiers = tierOrder.slice(0, tierOrder.indexOf(userTier) + 1)
-
-// //   useEffect(() => {
-// //     if (!isLoaded || !user) return
-
-// //     const fetchEvents = async () => {
-// //       setLoading(true)
-// //       const { data, error } = await supabase
-// //         .from('events')
-// //         .select('*')
-
-// //       if (error) {
-// //         setError(error.message)
-// //       } else {
-// //         setEvents(data)
-// //       }
-
-// //       setLoading(false)
-// //     }
-
-// //     fetchEvents()
-// //   }, [isLoaded, user])
-
-// //   const handleTierUpgrade = async () => {
-// //     try {
-// //       await user?.update({
-// //         publicMetadata: { tier: 'platinum' },
-// //       })
-// //       window.location.reload()
-// //     } catch (err) {
-// //       alert('Failed to upgrade tier.')
-// //     }
-// //   }
-
-// //   if (!isLoaded) return <div className="p-6">Loading user...</div>
-// //   if (!user) return <div className="p-6">Please log in to view events.</div>
-// //   if (loading) return <div className="p-6">Loading events...</div>
-// //   if (error) return <div className="p-6 text-red-600">Error: {error}</div>
-
-// //   return (
-// //     <div className="max-w-7xl mx-auto p-6">
-// //       <h1 className="text-2xl font-bold text-gray-800 mb-4">Available Events</h1>
-
-// //       <button
-// //         onClick={handleTierUpgrade}
-// //         className="mb-6 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
-// //       >
-// //         Simulate Tier Upgrade to Platinum
-// //       </button>
-
-// //       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-// //         {events.map((event) => {
-// //           const isAllowed = allowedTiers.includes(event.tier)
-// //           return (
-// //             <div key={event.id} className="relative">
-// //               <EventCard {...event} />
-// //               {!isAllowed && (
-// //                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl text-red-600 text-center font-semibold text-sm p-4">
-// //                   Upgrade to <span className="ml-1 font-bold">Platinum</span> to access this event.
-// //                 </div>
-// //               )}
-// //             </div>
-// //           )
-// //         })}
-// //       </div>
-// //     </div>
-// //   )
-// // }
 
 
 // // app/events/page.tsx
