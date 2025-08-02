@@ -1,3 +1,30 @@
+# Tier-Based Event Showcase 🎭
+
+## 🔥 Tech Stack
+- **Next.js 14 (App Router)**
+- **Clerk.dev** – Auth
+- **Supabase** – PostgreSQL
+- **Tailwind CSS** – Styling
+
+## 🚀 Live Demo
+[Visit the deployed site](https://your-vercel-url.vercel.app)
+
+## 🔐 Demo Accounts
+| Tier     | Email              | Password  |
+|----------|--------------------|-----------|
+| Free     | free@example.com   | password  |
+| Silver   | silver@example.com | password  |
+| Gold     | gold@example.com   | password  |
+| Platinum | platinum@example.com | password  |
+
+## 🛠️ Setup Locally
+
+```bash
+git clone https://github.com/yourusername/tier-event-showcase.git
+cd tier-event-showcase
+npm install
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
