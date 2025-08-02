@@ -132,7 +132,8 @@
 // // app/events/page.tsx
 
 
-//'use client'
+// app/events/page.tsx
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
@@ -140,24 +141,26 @@ import { createClient } from '@supabase/supabase-js'
 import EventCard from '@/components/EventCard'
 import { upgradeUserTier } from '@/app/events/actions'
 
-// Supabase client
+// Define a type for your event data to avoid using 'any'
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  event_date: string;
+  tier: 'free' | 'silver' | 'gold' | 'platinum';
+  image_url: string;
+  // Add any other properties that come from your 'events' table
+}
+
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Event type definition
-interface Event {
-  id: number
-  title: string
-  description: string
-  event_date: string
-  tier: string
-  image_url: string
-}
-
 export default function EventsPage() {
   const { user, isLoaded } = useUser()
+  // Use the specific 'Event' type for the state
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -173,6 +176,7 @@ export default function EventsPage() {
 
     const fetchEvents = async () => {
       setLoading(true)
+      // The data from Supabase will be checked against the 'Event' type
       const { data, error } = await supabase.from('events').select('*')
 
       if (error) {
@@ -201,23 +205,18 @@ export default function EventsPage() {
   if (!user) return <div className="p-6 text-center">Please log in to view events.</div>
   if (error) return <div className="p-6 text-red-600 text-center">Error: {error}</div>
 
-  const currentTier = (user.publicMetadata.tier as string) || 'free'
-
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Available Events</h1>
           <p className="text-md text-gray-500 mt-1">
-            Your current tier:{' '}
-            <span className="font-semibold capitalize text-indigo-600">
-              {currentTier}
-            </span>
+            Your current tier: <span className="font-semibold capitalize text-indigo-600">{(user.publicMetadata.tier as string) || 'free'}</span>
           </p>
         </div>
         <button
           onClick={handleTierUpgrade}
-          disabled={isUpgrading || currentTier === 'platinum'}
+          disabled={isUpgrading || user.publicMetadata.tier === 'platinum'}
           className="mt-4 sm:mt-0 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isUpgrading ? 'Upgrading...' : 'Simulate Upgrade to Platinum'}

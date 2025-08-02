@@ -29,24 +29,38 @@
 //     return { success: false, error: 'An unexpected error occurred.' }
 //   }
 // }
+// app/actions.ts
 'use server'
 
-import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs/server'
+import { clerkClient, currentUser } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
 
-export async function upgradeUserTier() {
+// Define a specific return type for the server action
+interface ActionResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function upgradeUserTier(): Promise<ActionResult> {
+  const user = await currentUser()
+
+  if (!user) {
+    // This case should ideally not be hit if called from a logged-in client,
+    // but it's good practice for robust server actions.
+    return { success: false, error: 'You must be signed in to upgrade your tier.' }
+  }
+
   try {
-    const { userId } = auth()
-    if (!userId) throw new Error('User not authenticated')
-
-    await clerkClient.users.updateUser(userId, {
+    await clerkClient.users.updateUser(user.id, {
       publicMetadata: { tier: 'platinum' },
     })
 
+    revalidatePath('/events')
+
     return { success: true }
   } catch (error) {
-    const err = error as Error
-    console.error('Failed to upgrade tier:', err)
-    return { success: false, error: err.message || 'Unknown error' }
+    console.error('Failed to upgrade tier:', error)
+    // Avoid returning the raw error to the client for security
+    return { success: false, error: 'An unexpected error occurred.' }
   }
 }
