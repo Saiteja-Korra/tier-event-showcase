@@ -132,8 +132,7 @@
 // // app/events/page.tsx
 
 
-// app/events/page.tsx
-'use client'
+//'use client'
 
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
@@ -141,13 +140,13 @@ import { createClient } from '@supabase/supabase-js'
 import EventCard from '@/components/EventCard'
 import { upgradeUserTier } from '@/app/events/actions'
 
-// Initialize Supabase client
+// Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Define a type for event data
+// Event type definition
 interface Event {
   id: number
   title: string
@@ -164,7 +163,6 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null)
   const [isUpgrading, setIsUpgrading] = useState(false)
 
-  // Fetch events once the user is loaded
   useEffect(() => {
     if (!isLoaded) return
 
@@ -188,7 +186,6 @@ export default function EventsPage() {
     fetchEvents()
   }, [isLoaded, user])
 
-  // Simulate tier upgrade to platinum
   const handleTierUpgrade = async () => {
     setIsUpgrading(true)
     const result = await upgradeUserTier()
@@ -200,17 +197,9 @@ export default function EventsPage() {
     setIsUpgrading(false)
   }
 
-  if (!isLoaded || loading) {
-    return <div className="p-6 text-center">Loading...</div>
-  }
-
-  if (!user) {
-    return <div className="p-6 text-center">Please log in to view events.</div>
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-600 text-center">Error: {error}</div>
-  }
+  if (!isLoaded || loading) return <div className="p-6 text-center">Loading...</div>
+  if (!user) return <div className="p-6 text-center">Please log in to view events.</div>
+  if (error) return <div className="p-6 text-red-600 text-center">Error: {error}</div>
 
   const currentTier = (user.publicMetadata.tier as string) || 'free'
 

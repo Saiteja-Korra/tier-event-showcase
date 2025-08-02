@@ -44,8 +44,9 @@ export async function upgradeUserTier() {
     })
 
     return { success: true }
-  } catch (error: any) {
-    console.error('Failed to upgrade tier:', error)
-    return { success: false, error: error.message || 'Unknown error' }
+  } catch (error) {
+    const err = error as Error
+    console.error('Failed to upgrade tier:', err)
+    return { success: false, error: err.message || 'Unknown error' }
   }
 }
