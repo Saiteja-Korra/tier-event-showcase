@@ -139,7 +139,7 @@ import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import EventCard from '@/components/EventCard'
-import { upgradeUserTier } from '@/app/events/actions'
+import { upgradeUserTier } from '@/app/actions'
 
 // Define a type for your event data to avoid using 'any'
 interface Event {
